@@ -116,7 +116,39 @@ ssize_t write(int fd, const void*buf, size_t nbytes, int *retval){
 }
 
 int dup2(int oldfd, int newfd, int *retval) {
+    // Check if both fds are valid ints
+    if (oldfd < 0 || oldfd > __OPEN_MAX) {
+        return EBADF;
+    }
+    if (newfd < 0 || newfd > __OPEN_MAX) {
+        return EBADF;
+    }
+    // Check if they are the same number. if so just return
+    if (oldfd == newfd) {
+        *retval = newfd;
+        return 0;
+    }
 
+    // Check if old fd exists
+    if (curproc->fd_table[oldfd] == NULL) {
+        return EBADF;
+    }
+
+    // Check if newfd names an open file. If so close it
+    if (curproc->fd_table[newfd] != NULL) {
+        file_close_ret = 0;
+        errno = sys_close(newfd, &file_close_ret)
+        if( errno != 0 ) {
+            return  errno; 
+        }
+    }
+
+    // Update oldfd onto newfd 
+    curproc->fd_table[newfd] = curproc->fd_table[oldfd];
+
+    // Return newfd
+    *retval = newfd;
+    return 0;
 }
 
 // off_t lseek(int fd, off_t pos, int whence, &retval) {
