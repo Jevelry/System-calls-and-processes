@@ -21,6 +21,8 @@
 
 int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     int errno;
+    // Set to return an error for now until end of function is reached
+    &retval = -1;
     // check valid flags
     if (flags != O_RDONLY || flags != O_WRONLY ||flags != O_RDWR) {
         return EINVAL;
@@ -75,11 +77,33 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     //assign fd to oft entry 
     curproc->fd_table[fd_table_num] = &of_table[of_table_num];
 
-    return fd_table_num;
+    // put return val in address
+    &retval = fd_table_num;
+    return 0;
 }
 
 int sys_close(int fd, int *retval) {
-
+    //Check if fd in valid range
+    if (fd < 0 || fd > __OPEN_MAX) {
+        return EBADF;
+    }
+    // Check if fd table entry is valid
+    if (curproc->fd_table[fd] == NULL) {
+        return EBADF;
+    }
+    // Close file
+    struct *open_file file = fd_table[fd];
+    file->ref_count--;
+    if (file->ref_count == 0) {
+        // no need to check for error. vfs.h says it doesn't fail
+        vfs_close(file->vnode);
+        file->fp = 0;
+        file->flag = -1;
+        file->vnode = NULL;
+    }
+    curproc->fd_table[fd] == NULL;
+    &retval = 0;
+    return 0;
 }
 
 ssize_t read(int fd, void *buf, size_t buflen, int *retval) {
