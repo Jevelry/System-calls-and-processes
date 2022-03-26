@@ -82,8 +82,20 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
 
+<<<<<<< HEAD
 	// INITIALISE FILE DESCRIPTOR TABLE TO NULL
 	proc->fd_table = NULL;
+=======
+	proc->fd_table = kmalloc(sizeof(open_file) * OPEN_MAX);
+	if (Proc->fd_table == NULL) {
+		panic("fd_table didn't initialise");
+	}
+
+	for (int i = 0; i < OPEN_MAX; ++i) {
+		proc->fd_table[i] = NULL;
+	}
+
+>>>>>>> partial of_table fd_table
 	return proc;
 }
 
@@ -165,6 +177,10 @@ proc_destroy(struct proc *proc)
 			proc->p_addrspace = NULL;
 		}
 		as_destroy(as);
+	}
+
+	if(proc->fd_table) {
+		kfree(fd_table);
 	}
 
 	KASSERT(proc->p_numthreads == 0);

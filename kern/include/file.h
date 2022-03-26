@@ -10,6 +10,7 @@
  */
 #include <limits.h>
 
+#include <types.h>
 
 /*
  * Put your function declarations and data types here ...
@@ -18,19 +19,18 @@
  /*
  * DATA TYPES
  */
-
-struct of_table {
+typedef struct open_file_struct {
+    off_t fp;
     int flags;
-    off_t fpointer;
     struct vnode *vnode;
-}
+} open_file;
 
-
-
+open_file *of_table;
 
  /*
  * FUNCTIONS
  */
+
 int sys_open(const char *filename, int flags, mode_t mode, int *retval);
 
 int sys_close(int fd, int *retval);

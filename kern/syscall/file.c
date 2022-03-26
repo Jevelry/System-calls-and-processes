@@ -45,8 +45,15 @@ int dup2(int oldfd, int newfd, int *retval) {
 // }
 
 
+/*
+ * fd_table and of_table init functions
+ */
 
+int init_of_table() {
 
+}
 
+int init_fd_table() {
 
+}
 
