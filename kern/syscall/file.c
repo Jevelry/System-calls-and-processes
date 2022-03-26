@@ -49,7 +49,7 @@ int dup2(int oldfd, int newfd, int *retval) {
  * of_table init functions
  */
 
-int init_of_table() {
+void init_of_table() {
     of_table = kmalloc(sizeof(open_file) * OPEN_MAX);
     if(of_table == NULL) {
         panic("of_table didn't initialise");
@@ -72,8 +72,6 @@ int init_of_table() {
     //stderr
     of_table[2].flag = O_WRONLY;
     vfs_open(con2, O_WRONLY, 0, &of_table[2].vnode);
-
-    return 0;
 }
 
 void destroy_of_table() {
