@@ -24,9 +24,20 @@ int sys_open(userptr_t filename, int flags, mode_t mode, int *retval) {
     // Set to return an error for now until end of function is reached
     *retval = -1;
     // check valid flags
-    if (flags != O_RDONLY || flags != O_WRONLY ||flags != O_RDWR) {
+    int flag_mode = (flags & O_ACCMODE);
+    int flag = -1;
+    if (flag_mode == O_RDONLY) {
+        flag = O_RDONLY;
+    }
+    else if (flag_mode == O_WRONLY) {
+        flag = O_WRONLY;
+    }
+    else if (flag_mode == O_RDWR) {
+        flag = O_RDWR;
+    } else {
         return EINVAL;
     }
+
 
     if (filename == NULL) {
         return EFAULT;
@@ -71,7 +82,7 @@ int sys_open(userptr_t filename, int flags, mode_t mode, int *retval) {
     //create table entry
     of_table[of_table_num].fp = 0;
     of_table[of_table_num].ref_count = 1;
-    of_table[of_table_num].flags = flags;
+    of_table[of_table_num].flags = flag;
     of_table[of_table_num].vnode = *file_vnode;
 
     //assign fd to oft entry 
