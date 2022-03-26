@@ -44,6 +44,7 @@
 #include <vfs.h>
 #include <syscall.h>
 #include <test.h>
+#include <file.h>
 
 /*
  * Load program "progname" and start running it in usermode.
@@ -89,6 +90,13 @@ runprogram(char *progname)
 
 	/* Done with the file now. */
 	vfs_close(v);
+
+
+	// INITIALISE THIS PROCCESES FILE DESCRIPTOR TABLE 
+	result = init_fd_table();
+	if (init_fd_table() != 0) {
+		return -1;
+	}
 
 	/* Define the user stack in the address space */
 	result = as_define_stack(as, &stackptr);

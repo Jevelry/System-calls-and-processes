@@ -15,7 +15,22 @@
  * Put your function declarations and data types here ...
  */
 
+ /*
+ * DATA TYPES
+ */
 
+struct of_table {
+    int flags;
+    off_t fpointer;
+    struct vnode *vnode;
+}
+
+
+
+
+ /*
+ * FUNCTIONS
+ */
 int sys_open(const char *filename, int flags, mode_t mode, int *retval);
 
 int sys_close(int fd, int *retval);
