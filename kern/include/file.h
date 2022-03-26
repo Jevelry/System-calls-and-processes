@@ -36,9 +36,9 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval);
 
 int sys_close(int fd, int *retval);
 
-ssize_t read(int fd, void *buf, size_t buflen, int *retval);
+int read(int fd, void *buf, size_t buflen, ssize_t *retval);
 
-ssize_t write(int fd, const void*buf, size_t nbytes, int *retval);
+int write(int fd, const void*buf, size_t nbytes, ssize_t *retval);
 
 
 

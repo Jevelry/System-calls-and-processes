@@ -22,7 +22,7 @@
 int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     int errno;
     // Set to return an error for now until end of function is reached
-    &retval = -1;
+    *retval = -1;
     // check valid flags
     if (flags != O_RDONLY || flags != O_WRONLY ||flags != O_RDWR) {
         return EINVAL;
@@ -69,16 +69,16 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
         return errno;
     }
     //create table entry
-    of_table[of_table_num]->fp = 0;
-    of_table[of_table_num]->ref_count = 1;
-    of_table[of_table_num]->flag = flags;
-    of_table[of_table_num]->vnode = file_vnode;
+    of_table[of_table_num].fp = 0;
+    of_table[of_table_num].ref_count = 1;
+    of_table[of_table_num].flag = flags;
+    of_table[of_table_num].vnode = file_vnode;
 
     //assign fd to oft entry 
     curproc->fd_table[fd_table_num] = &of_table[of_table_num];
 
     // put return val in address
-    &retval = fd_table_num;
+    *retval = fd_table_num;
     return 0;
 }
 
@@ -92,7 +92,7 @@ int sys_close(int fd, int *retval) {
         return EBADF;
     }
     // Close file
-    struct *open_file file = fd_table[fd];
+    open_file *file = fd_table[fd];
     file->ref_count--;
     if (file->ref_count == 0) {
         // no need to check for error. vfs.h says it doesn't fail
@@ -102,17 +102,70 @@ int sys_close(int fd, int *retval) {
         file->vnode = NULL;
     }
     curproc->fd_table[fd] == NULL;
-    &retval = 0;
+    *retval = 0;
     return 0;
 }
 
-ssize_t read(int fd, void *buf, size_t buflen, int *retval) {
+int read(int fd, void *buf, size_t buflen, ssize_t *retval) {
+    //Check if fd in valid range
+    if (fd < 0 || fd >= MAX_OPEN) {
+        return EBADF;
+    }
 
+    //Check if file is valid
+    open_file *file = curproc->fd_table[fd];
+    if (file->vnode == NULL || file->flag != O_RDONLY || file->flag != O_RDWR) {
+        return EBADF;
+    }
+
+    //Check if buf is valid
+    if (buf == NULL) {
+        return EFAULT;
+    }
+
+    struct iovec iovec:
+    struct uio uio;
+    uio_uninit(&iovec, &uio, buf, buflen, file->fp, UIO_READ);
+
+    int errno = VOP_READ(file->vnode, &uio);
+    if (errno) {
+        return errno;
+    }
+
+    file->fp = uio.uio_offset;
+    *retval = bufflen - uio.uio_resid;
+    return 0;
 }
 
-ssize_t write(int fd, const void*buf, size_t nbytes, int *retval){
+int write(int fd, const void*buf, size_t nbytes, ssize_t *retval){
+    //Check if fd in valid range
+    if (fd < 0 || fd >= MAX_OPEN) {
+        return EBADF;
+    }
 
+    //Check if file is valid
+    open_file *file = curproc->fd_table[fd];
+    if (file->vnode == NULL || file->flag != O_WRONLY || file->flag != O_RDWR) {
+        return EBADF;
+    }
 
+    //Check if buf is valid
+    if (buf == NULL) {
+        return EFAULT;
+    }
+
+    struct iovec iovec:
+    struct uio uio;
+    uio_uninit(&iovec, &uio, buf, buflen, file->fp, UIO_WRITE);
+
+    int errno = VOP_WRITE(file->vnode, &uio);
+    if (errno) {
+        return errno;
+    }
+
+    file->fp = uio.uio_offset;
+    *retval = nbytes - uio.uio_resid;
+    return 0;
 }
 
 int dup2(int oldfd, int newfd, int *retval) {
