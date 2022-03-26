@@ -46,14 +46,48 @@ int dup2(int oldfd, int newfd, int *retval) {
 
 
 /*
- * fd_table and of_table init functions
+ * of_table init functions
  */
 
 int init_of_table() {
+    of_table = kmalloc(sizeof(open_file) * OPEN_MAX);
+    if(of_table == NULL) {
+        panic("of_table didn't initialise");
+    }
 
+    for (int counter = 0; counter < OPEN_MAX; counter++) {
+        of_table[counter].fp = 0;
+        of_table[counter].flag = -1;
+        of_table[counter].vnode = NULL; 
+        of_table[counter].ref_count = 0;
+    }
+
+    char1 con1[] = "con:";
+    char1 con2[] = "con:";
+
+    //stdout
+    of_table[1].flag = O_WRONLY;
+    vfs_open(con1, O_WRONLY, 0, &of_table[1].vnode);
+
+    //stderr
+    of_table[2].flag = O_WRONLY;
+    vfs_open(con2, O_WRONLY, 0, &of_table[2].vnode);
+
+    return 0;
 }
 
-int init_fd_table() {
+void destroy_of_table() {
+    if (of_table == NULL) {
+        return;
+    }
 
+    for (int counter = 0; counter < OPEN_MAX; counter++) {
+        if(of_table[counter]->vnode != NULL) {
+            vfs_close(of_table[counter]->vnode);
+        }
+    }
+
+    kfree(of_table);
 }
+
 

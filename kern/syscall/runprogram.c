@@ -105,6 +105,12 @@ runprogram(char *progname)
 		return result;
 	}
 
+	curproc->fd_table[1] = &of_table[1];
+	of_table[1]->ref_counter++;
+
+	curproc->fd_table[2] = &of_table[2];
+	of_table[2]->ref_counter++;
+
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,
 			  NULL /*userspace addr of environment*/,

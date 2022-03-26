@@ -23,6 +23,7 @@ typedef struct open_file_struct {
     off_t fp;
     int flags;
     struct vnode *vnode;
+    int ref_count;
 } open_file;
 
 open_file *of_table;

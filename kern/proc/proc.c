@@ -82,12 +82,9 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
 
-<<<<<<< HEAD
-	// INITIALISE FILE DESCRIPTOR TABLE TO NULL
-	proc->fd_table = NULL;
-=======
+
 	proc->fd_table = kmalloc(sizeof(open_file) * OPEN_MAX);
-	if (Proc->fd_table == NULL) {
+	if (proc->fd_table == NULL) {
 		panic("fd_table didn't initialise");
 	}
 
@@ -95,7 +92,6 @@ proc_create(const char *name)
 		proc->fd_table[i] = NULL;
 	}
 
->>>>>>> partial of_table fd_table
 	return proc;
 }
 

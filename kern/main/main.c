@@ -139,6 +139,8 @@ boot(void)
 	 */
 	COMPILE_ASSERT(sizeof(userptr_t) == sizeof(char *));
 	COMPILE_ASSERT(sizeof(*(userptr_t)0) == sizeof(char));
+
+	init_of_table();
 }
 
 /*
@@ -154,6 +156,8 @@ shutdown(void)
 	vfs_clearbootfs();
 	vfs_clearcurdir();
 	vfs_unmountall();
+
+	destroy_of_table();
 
 	thread_shutdown();
 
