@@ -20,7 +20,62 @@
  */
 
 int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
+    int errno;
+    // check valid flags
+    if (flags != O_RDONLY || flags != O_WRONLY ||flags != O_RDWR) {
+        return EINVAL;
+    }
 
+    if (filename == NULL) {
+        return EFAULT;
+    }
+
+    //copy filename into kernal (check valid filename pointer)
+    char *kern_filename = kmalloc(__NAME_MAX);
+
+    errno = copyinstr(filename, kfilename, __NAME_MAX, NULL);
+    if (errno != 0) {
+        return errno;
+    }
+
+    //check for lowest available fd and oft spots
+    int of_table_num = -1;
+    int fd_table_num = -1;
+    for(int i = 3; i < __OPEN_MAX; i++) {
+        if(of_table[i]->vnode == NULL) {
+            of_table_num = i;
+        }
+    }
+    if (of_table_num == -1) {
+        return ENFILE;
+    }
+
+    for(int i = 3; i < __OPEN_MAX; i++) {
+        if(of_table[i] == NULL) {
+            fd_table_num = i;
+        }
+    }
+        if (fd_table_num == -1) {
+        return EMFILE;
+    }
+
+    //get vnode for file
+    struct vnode **file_vnode = kmalloc(sizeof(struct vnode));
+    
+    errno = vfs_open(kern_filename, flags, mode, file_vnode);
+    if (errno != 0) {
+        return errno;
+    }
+    //create table entry
+    of_table[of_table_num]->fp = 0;
+    of_table[of_table_num]->ref_count = 1;
+    of_table[of_table_num]->flag = flags;
+    of_table[of_table_num]->vnode = file_vnode;
+
+    //assign fd to oft entry 
+    curproc->fd_table[fd_table_num] = &of_table[of_table_num];
+
+    return fd_table_num;
 }
 
 int sys_close(int fd, int *retval) {
