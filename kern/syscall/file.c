@@ -215,9 +215,20 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
     return 0;
 }
 
-// off_t lseek(int fd, off_t pos, int whence, &retval) {
+    off_t sys_lseek(int fd, off_t pos, int whence, &retval) {
+        // Check fd in valid range
 
-// }
+        // Check fd valid in table
+
+        // Check whence flag is valid
+
+
+        // Check if file is seekable, ie not a device
+
+
+        // Set new position
+
+    }
 
 
 /*

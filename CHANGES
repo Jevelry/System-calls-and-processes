@@ -1302,7 +1302,7 @@ OS/161 1.05 released 20020917
    - Merge the code for the 'p' and 's' menu commands.
 
 20020830 dholland in base
-   - Don't use OPEN_MAX in the base system.
+   - Don't use  in the base system.
 
 20020830 dholland in sol1
    - Add some missing "volatile" keywords.
