@@ -91,13 +91,6 @@ runprogram(char *progname)
 	/* Done with the file now. */
 	vfs_close(v);
 
-
-	// INITIALISE THIS PROCCESES FILE DESCRIPTOR TABLE 
-	result = init_fd_table();
-	if (init_fd_table() != 0) {
-		return -1;
-	}
-
 	/* Define the user stack in the address space */
 	result = as_define_stack(as, &stackptr);
 	if (result) {
@@ -106,10 +99,10 @@ runprogram(char *progname)
 	}
 
 	curproc->fd_table[1] = &of_table[1];
-	of_table[1]->ref_counter++;
+	of_table[1].ref_count++;
 
 	curproc->fd_table[2] = &of_table[2];
-	of_table[2]->ref_counter++;
+	of_table[2].ref_count++;
 
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,

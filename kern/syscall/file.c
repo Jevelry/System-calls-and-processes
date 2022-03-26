@@ -19,7 +19,7 @@
  * Add your file-related functions here ...
  */
 
-int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
+int sys_open(userptr_t filename, int flags, mode_t mode, int *retval) {
     int errno;
     // Set to return an error for now until end of function is reached
     *retval = -1;
@@ -35,7 +35,7 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     //copy filename into kernal (check valid filename pointer)
     char *kern_filename = kmalloc(__NAME_MAX);
 
-    errno = copyinstr(filename, kfilename, __NAME_MAX, NULL);
+    errno = copyinstr(filename, kern_filename, __NAME_MAX, NULL);
     if (errno != 0) {
         return errno;
     }
@@ -44,7 +44,7 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     int of_table_num = -1;
     int fd_table_num = -1;
     for(int i = 3; i < __OPEN_MAX; i++) {
-        if(of_table[i]->vnode == NULL) {
+        if(of_table[i].vnode == NULL) {
             of_table_num = i;
         }
     }
@@ -53,7 +53,7 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     }
 
     for(int i = 3; i < __OPEN_MAX; i++) {
-        if(of_table[i] == NULL) {
+        if(curproc->fd_table[i] == NULL) {
             fd_table_num = i;
         }
     }
@@ -71,8 +71,8 @@ int sys_open(const char *filename, int flags, mode_t mode, int *retval) {
     //create table entry
     of_table[of_table_num].fp = 0;
     of_table[of_table_num].ref_count = 1;
-    of_table[of_table_num].flag = flags;
-    of_table[of_table_num].vnode = file_vnode;
+    of_table[of_table_num].flags = flags;
+    of_table[of_table_num].vnode = *file_vnode;
 
     //assign fd to oft entry 
     curproc->fd_table[fd_table_num] = &of_table[of_table_num];
@@ -92,29 +92,29 @@ int sys_close(int fd, int *retval) {
         return EBADF;
     }
     // Close file
-    open_file *file = fd_table[fd];
+    open_file *file = curproc->fd_table[fd];
     file->ref_count--;
     if (file->ref_count == 0) {
         // no need to check for error. vfs.h says it doesn't fail
         vfs_close(file->vnode);
         file->fp = 0;
-        file->flag = -1;
+        file->flags = -1;
         file->vnode = NULL;
     }
-    curproc->fd_table[fd] == NULL;
+    curproc->fd_table[fd] = NULL;
     *retval = 0;
     return 0;
 }
 
-int read(int fd, void *buf, size_t buflen, ssize_t *retval) {
+int sys_read(int fd, void *buf, size_t buflen, int *retval) {
     //Check if fd in valid range
-    if (fd < 0 || fd >= MAX_OPEN) {
+    if (fd < 0 || fd >= OPEN_MAX) {
         return EBADF;
     }
 
     //Check if file is valid
     open_file *file = curproc->fd_table[fd];
-    if (file->vnode == NULL || file->flag != O_RDONLY || file->flag != O_RDWR) {
+    if (file->vnode == NULL || (file->flags != O_RDONLY && file->flags != O_RDWR)) {
         return EBADF;
     }
 
@@ -123,9 +123,9 @@ int read(int fd, void *buf, size_t buflen, ssize_t *retval) {
         return EFAULT;
     }
 
-    struct iovec iovec:
+    struct iovec iovec;
     struct uio uio;
-    uio_uninit(&iovec, &uio, buf, buflen, file->fp, UIO_READ);
+    uio_uinit(&iovec, &uio, (userptr_t) buf, buflen, file->fp, UIO_READ);
 
     int errno = VOP_READ(file->vnode, &uio);
     if (errno) {
@@ -133,19 +133,19 @@ int read(int fd, void *buf, size_t buflen, ssize_t *retval) {
     }
 
     file->fp = uio.uio_offset;
-    *retval = bufflen - uio.uio_resid;
+    *retval = buflen - uio.uio_resid;
     return 0;
 }
 
-int write(int fd, const void*buf, size_t nbytes, ssize_t *retval){
+int sys_write(int fd, void *buf, size_t nbytes, int *retval){
     //Check if fd in valid range
-    if (fd < 0 || fd >= MAX_OPEN) {
+    if (fd < 0 || fd >= OPEN_MAX) {
         return EBADF;
     }
 
     //Check if file is valid
     open_file *file = curproc->fd_table[fd];
-    if (file->vnode == NULL || file->flag != O_WRONLY || file->flag != O_RDWR) {
+    if (file->vnode == NULL || (file->flags != O_WRONLY && file->flags != O_RDWR)) {
         return EBADF;
     }
 
@@ -154,9 +154,9 @@ int write(int fd, const void*buf, size_t nbytes, ssize_t *retval){
         return EFAULT;
     }
 
-    struct iovec iovec:
+    struct iovec iovec;
     struct uio uio;
-    uio_uninit(&iovec, &uio, buf, buflen, file->fp, UIO_WRITE);
+    uio_uinit(&iovec, &uio, (userptr_t) buf, nbytes, file->fp, UIO_WRITE);
 
     int errno = VOP_WRITE(file->vnode, &uio);
     if (errno) {
@@ -168,7 +168,7 @@ int write(int fd, const void*buf, size_t nbytes, ssize_t *retval){
     return 0;
 }
 
-int dup2(int oldfd, int newfd, int *retval) {
+int sys_dup2(int oldfd, int newfd, int *retval) {
     // Check if both fds are valid ints
     if (oldfd < 0 || oldfd > __OPEN_MAX) {
         return EBADF;
@@ -189,8 +189,8 @@ int dup2(int oldfd, int newfd, int *retval) {
 
     // Check if newfd names an open file. If so close it
     if (curproc->fd_table[newfd] != NULL) {
-        file_close_ret = 0;
-        errno = sys_close(newfd, &file_close_ret)
+        int file_close_ret = 0;
+        int errno = sys_close(newfd, &file_close_ret);
         if( errno != 0 ) {
             return  errno; 
         }
@@ -221,20 +221,20 @@ void init_of_table() {
 
     for (int counter = 0; counter < OPEN_MAX; counter++) {
         of_table[counter].fp = 0;
-        of_table[counter].flag = -1;
+        of_table[counter].flags = -1;
         of_table[counter].vnode = NULL; 
         of_table[counter].ref_count = 0;
     }
 
-    char1 con1[] = "con:";
-    char1 con2[] = "con:";
+    char con1[] = "con:";
+    char con2[] = "con:";
 
     //stdout
-    of_table[1].flag = O_WRONLY;
+    of_table[1].flags = O_WRONLY;
     vfs_open(con1, O_WRONLY, 0, &of_table[1].vnode);
 
     //stderr
-    of_table[2].flag = O_WRONLY;
+    of_table[2].flags = O_WRONLY;
     vfs_open(con2, O_WRONLY, 0, &of_table[2].vnode);
 }
 
@@ -244,8 +244,8 @@ void destroy_of_table() {
     }
 
     for (int counter = 0; counter < OPEN_MAX; counter++) {
-        if(of_table[counter]->vnode != NULL) {
-            vfs_close(of_table[counter]->vnode);
+        if(of_table[counter].vnode != NULL) {
+            vfs_close(of_table[counter].vnode);
         }
     }
 

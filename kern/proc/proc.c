@@ -48,6 +48,7 @@
 #include <current.h>
 #include <addrspace.h>
 #include <vnode.h>
+#include <file.h>
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.
@@ -176,7 +177,7 @@ proc_destroy(struct proc *proc)
 	}
 
 	if(proc->fd_table) {
-		kfree(fd_table);
+		kfree(proc->fd_table);
 	}
 
 	KASSERT(proc->p_numthreads == 0);

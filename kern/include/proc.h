@@ -72,7 +72,7 @@ struct proc {
 
 	/* add more material here as needed */
 
-	open_file **fd_table;
+	struct open_file_struct **fd_table;
 
 };
 
