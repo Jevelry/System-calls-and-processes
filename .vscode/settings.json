@@ -2,6 +2,7 @@
     "files.associations": {
         "proc.h": "c",
         "types.h": "c",
-        "file.h": "c"
+        "file.h": "c",
+        "trapframe.h": "c"
     }
 }

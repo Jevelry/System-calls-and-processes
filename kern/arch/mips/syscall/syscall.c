@@ -36,6 +36,8 @@
 #include <current.h>
 #include <syscall.h>
 #include <file.h>
+#include <endian.h>
+#include <copyinout.h>
 
 
 /*
@@ -124,7 +126,6 @@ syscall(struct trapframe *tf)
 
 		case SYS_open:
 			err = sys_open((userptr_t)tf->tf_a0, (int)tf->tf_a1, (mode_t)tf->tf_a2, &retval);
-			kprintf("%d\n", err);
 			break;
 
 		case SYS_close:
@@ -144,17 +145,13 @@ syscall(struct trapframe *tf)
 			break;
 
 		case SYS_lseek:
-
 			join32to64(tf->tf_a2, tf->tf_a3, &offset);
 			copyin((userptr_t)tf->tf_sp + 16, &whence, sizeof(int));
-
+			
 			err = sys_lseek((int)tf->tf_a0, offset, whence, &retval64);
 
 			split64to32(retval64, &tf->tf_v0, &tf->tf_v1);
-			err = 0;
 			break;
-
-
 
 
 

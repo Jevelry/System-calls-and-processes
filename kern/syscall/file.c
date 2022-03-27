@@ -180,7 +180,10 @@ int sys_write(int fd, void *buf, size_t nbytes, int *retval){
 }
 
 int sys_dup2(int oldfd, int newfd, int *retval) {
+    // Assume something will go wrong for now
+    *retval = -1;
     // Check if both fds are valid ints
+
     if (oldfd < 0 || oldfd > __OPEN_MAX) {
         return EBADF;
     }
@@ -215,20 +218,59 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
     return 0;
 }
 
-    off_t sys_lseek(int fd, off_t pos, int whence, &retval) {
-        // Check fd in valid range
-
-        // Check fd valid in table
-
-        // Check whence flag is valid
-
-
-        // Check if file is seekable, ie not a device
-
-
-        // Set new position
-
+int sys_lseek(int fd, off_t offset, int whence, off_t *retval) {
+    // Assume something will go wrong for now
+    *retval = -1;
+    // Check fd in valid range
+    if (fd < 0 || fd > __OPEN_MAX) {
+        return EBADF;
     }
+    // Check if offset is valid
+    if (offset < 0) {
+        return EINVAL;
+    }
+    // Check fd valid in table, i.e if fd 0 is assigned
+    if (curproc->fd_table[fd] == NULL) {
+        return EBADF;
+    }
+    // Check whence flag is valid
+    if (whence == SEEK_CUR || whence == SEEK_END || whence == SEEK_SET) {
+    } else {
+        return EINVAL;
+    }
+
+    // Check if file is seekable, ie not a device
+    open_file *file = curproc->fd_table[fd];
+    struct stat *stats = kmalloc(sizeof(struct stat));
+    int can_seek = VOP_ISSEEKABLE(file->vnode);
+    if(can_seek == 0) {
+        // cannot seek file
+        return ESPIPE;
+    }
+    off_t new_pos;
+    off_t cur_pos = file->fp;
+
+    // Set new position
+    if (whence == SEEK_CUR) {
+        new_pos = cur_pos + offset;
+    } else if (whence == SEEK_END) {
+        VOP_STAT(file->vnode, stats);
+        new_pos = stats->st_size + offset;
+    } else {
+        new_pos = offset;
+    }
+
+    // Check if resulting seek position would be negative
+    if(new_pos < 0) {
+        return EINVAL;
+    }
+
+    file->fp = new_pos;
+    kfree(stats);
+
+    *retval = new_pos;
+    return 0;
+}
 
 
 /*
