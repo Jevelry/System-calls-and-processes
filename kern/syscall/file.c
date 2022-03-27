@@ -288,6 +288,7 @@ void init_of_table() {
 
     char con1[] = "con:";
     char con2[] = "con:";
+    char con3[] = "con:";
 
     //stdout
     of_table[1].flags = O_WRONLY;
@@ -296,6 +297,10 @@ void init_of_table() {
     //stderr
     of_table[2].flags = O_WRONLY;
     vfs_open(con2, O_WRONLY, 0, &of_table[2].vnode);
+
+    //stdin TEMP
+    of_table[0].flags = O_RDONLY;
+    vfs_open(con3, O_RDONLY, 0, &of_table[0].vnode);
 }
 
 void destroy_of_table() {

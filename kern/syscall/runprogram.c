@@ -104,6 +104,10 @@ runprogram(char *progname)
 	curproc->fd_table[2] = &of_table[2];
 	of_table[2].ref_count++;
 
+	//TEMP MAYBE
+	curproc->fd_table[0] = &of_table[0];
+	of_table[0].ref_count++;
+
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,
 			  NULL /*userspace addr of environment*/,
