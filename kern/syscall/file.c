@@ -102,8 +102,10 @@ int sys_close(int fd, int *retval) {
     if (curproc->fd_table[fd] == NULL) {
         return EBADF;
     }
+
     // Close file
     open_file *file = curproc->fd_table[fd];
+    
     file->ref_count--;
     if (file->ref_count == 0) {
         // no need to check for error. vfs.h says it doesn't fail
@@ -125,6 +127,10 @@ int sys_read(int fd, void *buf, size_t buflen, int *retval) {
 
     //Check if file is valid
     open_file *file = curproc->fd_table[fd];
+
+    if (curproc->fd_table[fd] == NULL) {
+        return EBADF;
+    }
     if (file->vnode == NULL || (file->flags != O_RDONLY && file->flags != O_RDWR)) {
         return EBADF;
     }
@@ -155,6 +161,10 @@ int sys_write(int fd, void *buf, size_t nbytes, int *retval){
     }
 
     //Check if file is valid
+    if (curproc->fd_table[fd] == NULL) {
+        return EBADF;
+    }
+
     open_file *file = curproc->fd_table[fd];
     if (file->vnode == NULL || (file->flags != O_WRONLY && file->flags != O_RDWR)) {
         return EBADF;
@@ -184,10 +194,10 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
     *retval = -1;
     // Check if both fds are valid ints
 
-    if (oldfd < 0 || oldfd > __OPEN_MAX) {
+    if (oldfd < 0 || oldfd >= __OPEN_MAX) {
         return EBADF;
     }
-    if (newfd < 0 || newfd > __OPEN_MAX) {
+    if (newfd < 0 || newfd >= __OPEN_MAX) {
         return EBADF;
     }
     // Check if they are the same number. if so just return
@@ -196,10 +206,13 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
         return 0;
     }
 
+
+
     // Check if old fd exists
     if (curproc->fd_table[oldfd] == NULL) {
         return EBADF;
     }
+
 
     // Check if newfd names an open file. If so close it
     if (curproc->fd_table[newfd] != NULL) {
@@ -221,6 +234,7 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
 int sys_lseek(int fd, off_t offset, int whence, off_t *retval) {
     // Assume something will go wrong for now
     *retval = -1;
+    
     // Check fd in valid range
     if (fd < 0 || fd > __OPEN_MAX) {
         return EBADF;
@@ -239,6 +253,7 @@ int sys_lseek(int fd, off_t offset, int whence, off_t *retval) {
     open_file *file = curproc->fd_table[fd];
     struct stat *stats = kmalloc(sizeof(struct stat));
     int can_seek = VOP_ISSEEKABLE(file->vnode);
+
     if(can_seek == 0) {
         // cannot seek file
         return ESPIPE;

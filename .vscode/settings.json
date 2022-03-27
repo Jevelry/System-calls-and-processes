@@ -3,6 +3,8 @@
         "proc.h": "c",
         "types.h": "c",
         "file.h": "c",
-        "trapframe.h": "c"
+        "trapframe.h": "c",
+        "syscall.h": "c",
+        "unistd.h": "c"
     }
 }
