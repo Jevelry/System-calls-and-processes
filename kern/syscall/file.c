@@ -95,7 +95,7 @@ int sys_open(userptr_t filename, int flags, mode_t mode, int *retval) {
 
 int sys_close(int fd, int *retval) {
     //Check if fd in valid range
-    if (fd < 0 || fd > __OPEN_MAX) {
+    if (fd < 0 || fd >= __OPEN_MAX) {
         return EBADF;
     }
     // Check if fd table entry is valid
@@ -236,7 +236,7 @@ int sys_lseek(int fd, off_t offset, int whence, off_t *retval) {
     *retval = -1;
     
     // Check fd in valid range
-    if (fd < 0 || fd > __OPEN_MAX) {
+    if (fd < 0 || fd >= __OPEN_MAX) {
         return EBADF;
     }
     // Check fd valid in table, i.e if fd 0 is assigned
