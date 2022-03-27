@@ -225,10 +225,6 @@ int sys_lseek(int fd, off_t offset, int whence, off_t *retval) {
     if (fd < 0 || fd > __OPEN_MAX) {
         return EBADF;
     }
-    // Check if offset is valid
-    if (offset < 0) {
-        return EINVAL;
-    }
     // Check fd valid in table, i.e if fd 0 is assigned
     if (curproc->fd_table[fd] == NULL) {
         return EBADF;
