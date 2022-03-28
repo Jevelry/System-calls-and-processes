@@ -28,7 +28,20 @@ Another issue we encounter was during the implementation of sys_dup2. We realise
 'fd_table' entry would not have a valid pointer. We solved this by adding a ref_count to our 'open_file' struct to ensure that the file would not close if there were other 
 pointers pointing to it.
 
-Our error handling was based off the OS161 reference manual so we had a much more detailed response when our code failed.
+We also encountered some issues with managing the input for lseek but that was due to us not watching the assigment 2 video beforehand.
+
+Our error handling was based off the OS161 reference manual so we had an idea of what to look out for and check. On top of this, a large portion 
+of error handling was done by system functions such as copyin, copyinstr, vfs_open, VOP_ISSEEKABLE etc. 
+
+In general, every system call follows the following structure:
+    - Check if the inputed user arguments are valid and allowed
+    - Check the file tables to see if we are allowed to perform the action (i.e if the file table is full or if the file is allowed to be read etc)
+    - Perform the system call main action and return
+
+Finally, our code passed the basic testing but we wanted to test it further with the testbin tests. However, we weren't able to get it running
+and eventually realised that it was because we had not attached stdin to the console. 
+
+After that, most tests passed however some tests failed because we were checking if fd > MAX_OPEN and not fd >= MAX_OPEN. They also failed because we did not check if fd_table[input] was valid. These problems were addressed and fixed.
 
 
 **Concurrency issues**
