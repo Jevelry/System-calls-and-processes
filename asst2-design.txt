@@ -1,1 +1,42 @@
-Add your design document in here.
+**Data Structures**
+Before we could start the assignment, we first needed to choose between arrays or linked lists to use as the basis of our data structures. We decided to use arrays 
+as its simplicity and ease to find free table entries and assign files to them were more suitable for the scope of this assignment. 
+
+Our implementation uses a global open file table and a per-process file descriptor table.
+
+Firstly, we created a struct named ‘open_file’ in file.h, to represent an open file and it consists of 4 attributes:
+off_t fp - a pointer which keeps track of where in the file is being operated on
+int flags - the permissions allowed for the file (e.g. O_RDONLY)
+struct vnode *vnode - the vnode associated with this file
+int ref_count - the number to file descriptors that point to this file
+
+The global open file table is represented by ‘of_table’, which is an array of structs ‘open_file’. It is defined in file.h and initialised in main.c, hence only 
+one is created and is shared by all processes.
+
+The file descriptor table is represented by ‘fd_table’, which is an array of pointers to struct ‘open_file’. It is defined in proc.h as a variable in the 'proc' struct 
+and NULL initialised in proc_create in proc.c, hence each process has its own file descriptor table. In runprogram.c, the NULL initialised fd table is attached to the console. 
+
+
+**Issues**
+There were not many issues surrounding the management of data structures and their states. The biggest issue was probably connecting the fd_table to the console cleanly and 
+that was solved easily with some simple planning.
+
+The main issues with transferring data to and from applications were solved by using copyinstr and uio to ensure data was being safely transferred between the kernel and
+application.
+
+Another issue we encounter was during the implementation of sys_dup2. We realised that if you duped a file and then closed it using either of the 'fd_table' entries, the other 
+'fd_table' entry would not have a valid pointer. We solved this by adding a ref_count to our 'open_file' struct to ensure that the file would not close if there were other 
+pointers pointing to it.
+
+Our error handling was based off the OS161 reference manual so we had a much more detailed response when our code failed.
+
+
+**Concurrency issues**
+The main concurrency issue that would arise from the implementation of fork() would be the race condition of editing 'open_file' structs in the functions sys_read(), sys_write()
+and sys_lseek() which can cause the fp to be overwritten. There is also a race condition in editing the 'of_table' in the functions sys_open()  and sys_close(), which could 
+cause a process to overwrite an open file if they happen to identify the same free entry. 
+
+Another issue would be in the function sys_dup2() if two processes calls it at the same time passing through the same old fd, the ref_count in 'open_file' that the old fd points 
+to may only increment once rather than twice which is the correct output.
+
+Most of the concurrency issues can be solved by putting a mutex lock on the entire 'of_table' or each individual index depending on whether the prioritisation is speed or memory.
